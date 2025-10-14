@@ -1,0 +1,22 @@
+.dashboard-wrapper {
+  padding: 24px;
+
+  .pagination-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+  }
+
+  .MuiTableCell-root{
+    text-align: center;
+  }
+
+  .pagination-info {
+    font-weight: 500;
+  }
+
+  table {
+    font-size: 14px;
+  }
+}
