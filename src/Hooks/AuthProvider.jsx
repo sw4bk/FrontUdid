@@ -11,23 +11,55 @@ export const AuthProvider = ({ children }) => {
 
   // 2. Efecto para inicializar el estado al cargar la app
   useEffect(() => {
-    // Escucha el evento de expiración del token que disparaste en apiService
     const handleLogoutEvent = () => {
       authService.logout();
       setIsAuthenticated(false);
     };
     window.addEventListener('tokenExpired', handleLogoutEvent);
-
-    const checkAuthStatus = () => {
+  
+    const init = async () => {
+      setLoading(true);
+    
+      const refresh = localStorage.getItem('refreshToken');
+      const access = localStorage.getItem('accessToken');
+    
+      // Caso 1: no hay access pero sí refresh → intenta renovar sin esperar un 401
+      if (!access && refresh) {
+        try {
+          const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/refresh/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refresh }),
+          });
+          if (res.ok) {
+            const { access } = await res.json();
+            localStorage.setItem('accessToken', access);
+            setIsAuthenticated(true);
+          } else {
+            await authService.logout();
+            setIsAuthenticated(false);
+          }
+        } catch {
+          await authService.logout();
+          setIsAuthenticated(false);
+        } finally {
+          setLoading(false);
+        }
+        return;
+      }
+    
+      // Caso 2: hay access (vigente o no) → deja que el interceptor maneje 401/refresh
       setIsAuthenticated(authService.isAuthenticated());
       setLoading(false);
     };
-    checkAuthStatus();
-
+  
+    init();
+  
     return () => {
       window.removeEventListener('tokenExpired', handleLogoutEvent);
     };
   }, []);
+
 
   // 3. Funciones que usarán tu servicio
   const login = async (credentials) => {

@@ -1,43 +1,41 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../Services/apiService';
 import axios from 'axios';
 
-// Ahora el hook acepta 'endpoint' y un objeto 'params' opcional
 const useFetchData = (endpoint, params = {}) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [reloadIndex, setReloadIndex] = useState(0); // <- nuevo gatillo
+
+  const refetch = useCallback(() => setReloadIndex(i => i + 1), []);
 
   useEffect(() => {
     if (!endpoint) return;
-
     const source = axios.CancelToken.source();
 
     const fetchData = async () => {
       setLoading(true);
       setError(null);
       try {
-        // La petición ahora usa el objeto 'params' para construir la URL
         const response = await api.get(endpoint, {
           cancelToken: source.token,
-          params: params // Axios se encarga de serializar esto en la URL
+          params
         });
         setData(response.data);
       } catch (err) {
-        if (!axios.isCancel(err)) {
-          setError(err);
-        }
+        if (!axios.isCancel(err)) setError(err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-
     return () => source.cancel('Solicitud cancelada por desmontaje.');
-  }, [endpoint, JSON.stringify(params)]); 
+  }, [endpoint, JSON.stringify(params), reloadIndex]); // <- incluye reloadIndex
 
-  return { data, loading, error };
+  return { data, loading, error, refetch }; // <- expón refetch
 };
 
 export default useFetchData;
+

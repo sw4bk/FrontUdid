@@ -14,7 +14,7 @@ const Dashboard = () => {
   const [opEdits, setOpEdits] = useState({});
   const [page, setPage] = useState(1);
 
-  const { data, loading, error } = useFetchData(`/subscriberinfo/?page=${page}`);
+  const { data, loading, error, refetch } = useFetchData(`/subscriberinfo/?page=${page}`);
   
   // Hook para la asociación de UDID
   const { executePost: executeAssociate, loading: associateLoading, error: associateError } = usePostData('/validate-and-associate-udid/');
@@ -59,13 +59,10 @@ const Dashboard = () => {
     };
 
     try {
-      // Llamada a la API usando el custom hook de POST
-      const response = await executeAssociate(postBody);
-      console.log('✅ Respuesta de la API:', response);
+      await executeAssociate(postBody);
       alert(`UDID ${udidValue} guardado para SN: ${sn}`);
-      window.location.reload(); // Recargar la página para reflejar los cambios
-
-      // Opcional: Limpiar el estado local después del éxito
+      // ❌ window.location.reload();
+      refetch(); // ✅ vuelve a cargar la data
       setUdidEdits(prev => {
         const newState = { ...prev };
         delete newState[sn];
@@ -79,24 +76,25 @@ const Dashboard = () => {
   
   // Nueva función para desasociar un UDID
   const handleDisassociateUdid = async (udid, operador) => {
-      if (!udid.trim()) {
-          alert('No se puede desasociar un UDID vacío.');
-          return;
-      }
+    if (!udid.trim()) {
+      alert('No se puede desasociar un UDID vacío.');
+      return;
+    }
 
-      const postBody = {
-          udid: udid,
-          operador: operador
-      };
+    const postBody = {
+      udid: udid,
+      operador: operador
+    };
 
-      try {
-          await executeDisassociate(postBody);
-          alert(`UDID ${udid} desasociado.`);
-          window.location.reload(); // Recargar la página para reflejar los cambios
-      } catch (err) {
-          console.error('Error al desasociar UDID:', err);
-          alert('Error al desasociar UDID. Inténtalo de nuevo.');
-      }
+    try {
+      await executeDisassociate(postBody);
+      alert(`UDID ${udid} desasociado.`);
+      // ❌ window.location.reload();
+      refetch(); // ✅ vuelve a cargar la data
+    } catch (err) {
+      console.error('Error al desasociar UDID:', err);
+      alert('Error al desasociar UDID. Inténtalo de nuevo.');
+    }
   };
 
   const subscriber = data?.results || [];
