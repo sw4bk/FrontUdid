@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import {
   Card,
   CardContent,
@@ -13,6 +13,7 @@ import {
   Grid,
   Avatar
 } from '@mui/material';
+import SubscriberDetailsModal from './SubscriberDetailsModal';
 import {
   Person as PersonIcon,
   Phone as PhoneIcon,
@@ -35,6 +36,7 @@ const SubscriberCard = memo(({
   onDisassociateUdid, 
   postLoading 
 }) => {
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
       case 'active':
@@ -272,6 +274,7 @@ const SubscriberCard = memo(({
                   variant="outlined"
                   size="small"
                   startIcon={<InfoIcon />}
+                  onClick={() => setDetailsModalOpen(true)}
                 >
                   Detalles
                 </Button>
@@ -280,6 +283,13 @@ const SubscriberCard = memo(({
           </Grid>
         </Grid>
       </CardContent>
+      
+      {/* Modal de Detalles */}
+      <SubscriberDetailsModal
+        open={detailsModalOpen}
+        onClose={() => setDetailsModalOpen(false)}
+        subscriber={item}
+      />
     </Card>
   );
 });
