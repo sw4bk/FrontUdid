@@ -1,12 +1,35 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 
-import {Table, TableBody, TableCell, TableContainer, TableHead, TableRow,Paper, Button, Typography, TextField, Box} from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import RemoveIcon from '@mui/icons-material/Remove';
+import {
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableContainer, 
+  TableHead, 
+  TableRow,
+  Paper, 
+  Button, 
+  Typography, 
+  TextField, 
+  Box,
+  Chip,
+  Tooltip,
+  CircularProgress
+} from '@mui/material';
+import {
+  Add as AddIcon,
+  Remove as RemoveIcon,
+  CheckCircle as CheckIcon,
+  Cancel as CancelIcon,
+  ViewList as TableViewIcon,
+  ViewModule as CardViewIcon,
+  Dashboard as DashboardIcon
+} from '@mui/icons-material';
 
 import useFetchData from '../Hooks/useFetchData';
 import usePostData from '../Hooks/usePostData';
 import { useNotifications } from '../Hooks/NotificationProvider.jsx';
+import SubscriberCard from '../components/SubscriberCard.jsx';
 
 import '../styles/Dashboard.scss';
 
@@ -15,6 +38,7 @@ const Dashboard = () => {
   const [udidEdits, setUdidEdits] = useState({});
   const [opEdits, setOpEdits] = useState({});
   const [page, setPage] = useState(1);
+  const [viewMode, setViewMode] = useState('table'); // 'table' o 'cards'
 
   const { data, loading, error, refetch } = useFetchData(`/subscriberinfo/?page=${page}`);
   
@@ -24,27 +48,27 @@ const Dashboard = () => {
   // Nuevo hook para la desasociación de UDID
   const { executePost: executeDisassociate, loading: disassociateLoading, error: disassociateError } = usePostData('/disassociate-udid/');
 
-  const handleUdidChange = (sn, value) => {
+  const handleUdidChange = useCallback((sn, value) => {
     setUdidEdits(prev => ({ ...prev, [sn]: value }));
-  };
+  }, []);
 
-  const handleOPChange = (sn, value) => {
+  const handleOPChange = useCallback((sn, value) => {
     setOpEdits(prev => ({ ...prev, [sn]: value }));
-  };
+  }, []);
 
-  const handlePrevious = () => {
+  const handlePrevious = useCallback(() => {
     if (page > 1) {
       setPage(prev => prev - 1);
       showInfo(`Navegando a página ${page - 1}`);
     }
-  };
+  }, [page, showInfo]);
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (data?.current_page < data?.total_pages) {
       setPage(prev => prev + 1);
       showInfo(`Navegando a página ${page + 1}`);
     }
-  };
+  }, [data?.current_page, data?.total_pages, page, showInfo]);
 
   // Función para guardar UDID, ahora con todos los parámetros
   const handleSaveUdid = async (subscriberCode, sn, udidValue, operador) => {
@@ -111,7 +135,7 @@ const Dashboard = () => {
     }
   };
 
-  const subscriber = data?.results || [];
+  const subscriber = useMemo(() => data?.results || [], [data?.results]);
   const postLoading = associateLoading || disassociateLoading;
 
   // Efecto para mostrar notificaciones de error
@@ -129,34 +153,83 @@ const Dashboard = () => {
 
   return (
     <Box className="dashboard-wrapper">
+      {/* Header del Dashboard */}
+      <Box className="dashboard-header">
+        <Box>
+          <Typography className="dashboard-title">
+            <DashboardIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+            Dashboard de Suscriptores
+          </Typography>
+          <Typography className="dashboard-subtitle">
+            Gestión de UDIDs y operadores - {data?.total_count || 0} registros totales
+          </Typography>
+        </Box>
+      </Box>
+
+      {/* Controles de Vista */}
+      <Box className="view-controls">
+        <Box className="view-toggle">
+          <button
+            className={`toggle-button ${viewMode === 'table' ? 'active' : ''}`}
+            onClick={() => setViewMode('table')}
+          >
+            <TableViewIcon sx={{ mr: 1 }} />
+            Vista Tabla
+          </button>
+          <button
+            className={`toggle-button ${viewMode === 'cards' ? 'active' : ''}`}
+            onClick={() => setViewMode('cards')}
+          >
+            <CardViewIcon sx={{ mr: 1 }} />
+            Vista Cards
+          </button>
+        </Box>
+      </Box>
+
+      {/* Estados de Carga */}
       {loading && (
-        <Box display="flex" alignItems="center" gap={2} mb={2}>
-          <Typography>Cargando datos...</Typography>
+        <Box className="loading-state">
+          <CircularProgress size={40} />
+          <Typography className="loading-text">Cargando datos...</Typography>
         </Box>
       )}
 
+      {/* Estado Vacío */}
+      {!loading && (!data?.results || data.results.length === 0) && (
+        <Box className="empty-state">
+          <Typography className="empty-icon">📊</Typography>
+          <Typography className="empty-title">No hay datos disponibles</Typography>
+          <Typography className="empty-description">
+            No se encontraron suscriptores para mostrar en esta página.
+          </Typography>
+        </Box>
+      )}
+
+      {/* Contenido Principal */}
       {!loading && subscriber.length > 0 && (
         <>
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Subscriber Code</TableCell>
-                  <TableCell>Nombre</TableCell>
-                  <TableCell>Apellido</TableCell>
-                  <TableCell>SN</TableCell>
-                  <TableCell>Activated</TableCell>
-                  <TableCell>UDID</TableCell>
-                  <TableCell>UDID Status</TableCell>
-                  <TableCell>Packages</TableCell>
-                  <TableCell>Products</TableCell>
-                  <TableCell>App Type</TableCell>
-                  <TableCell>App Version</TableCell>
-                  <TableCell>Last Activation</TableCell>
-                  <TableCell>Operador</TableCell>
-                  <TableCell>Acciones</TableCell>
-                </TableRow>
-              </TableHead>
+          {viewMode === 'table' ? (
+            <>
+              <TableContainer component={Paper} className="corporate-table">
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Subscriber Code</TableCell>
+                    <TableCell>Nombre</TableCell>
+                    <TableCell>Apellido</TableCell>
+                    <TableCell>SN</TableCell>
+                    <TableCell>Estado</TableCell>
+                    <TableCell>UDID</TableCell>
+                    <TableCell>UDID Status</TableCell>
+                    <TableCell>Packages</TableCell>
+                    <TableCell>Products</TableCell>
+                    <TableCell>App Type</TableCell>
+                    <TableCell>App Version</TableCell>
+                    <TableCell>Last Activation</TableCell>
+                    <TableCell>Operador</TableCell>
+                    <TableCell>Acciones</TableCell>
+                  </TableRow>
+                </TableHead>
               <TableBody>
                 {data.results.map((item, index) => (
                   <TableRow key={item.sn || index}>
@@ -164,7 +237,15 @@ const Dashboard = () => {
                     <TableCell>{item.first_name}</TableCell>
                     <TableCell>{item.last_name}</TableCell>
                     <TableCell>{item.sn}</TableCell>
-                    <TableCell>{item.activated ? 'Sí' : 'No'}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={item.activated ? 'Activo' : 'Inactivo'}
+                        color={item.activated ? 'success' : 'default'}
+                        size="small"
+                        icon={item.activated ? <CheckIcon /> : <CancelIcon />}
+                        className={item.activated ? 'status-active' : 'status-inactive'}
+                      />
+                    </TableCell>
                     <TableCell>
                       {item.udid ? (
                         item.udid
@@ -178,7 +259,18 @@ const Dashboard = () => {
                         />
                       )}
                     </TableCell>
-                    <TableCell>{item.udid_status || '—'}</TableCell>
+                    <TableCell>
+                      {item.udid_status ? (
+                        <Chip
+                          label={item.udid_status}
+                          color={item.udid_status === 'active' ? 'success' : 'warning'}
+                          size="small"
+                          className={item.udid_status === 'active' ? 'status-active' : 'status-pending'}
+                        />
+                      ) : (
+                        '—'
+                      )}
+                    </TableCell>
                     <TableCell>{item.packageNames?.join(', ') || '—'}</TableCell>
                     <TableCell>{item.products?.join(', ') || '—'}</TableCell>
                     <TableCell>{item.app_type || '—'}</TableCell>
@@ -198,25 +290,34 @@ const Dashboard = () => {
                       )}</TableCell>
                     <TableCell>
                       {!item.udid && udidEdits[item.sn] && (
-                        <Button
-                          size="small"
-                          variant="contained"
-                          color="primary"
-                          disabled={postLoading}
-                          onClick={() => handleSaveUdid(item.subscriber_code, item.sn, udidEdits[item.sn],opEdits[item.sn] ,item.validated_by_operator)}
-                        >
-                          {<AddIcon />}
-                        </Button>
+                        <Tooltip title="Asociar UDID">
+                          <Button
+                            size="small"
+                            variant="contained"
+                            color="success"
+                            disabled={postLoading}
+                            onClick={() => handleSaveUdid(item.subscriber_code, item.sn, udidEdits[item.sn],opEdits[item.sn] ,item.validated_by_operator)}
+                            className="corporate-action-button success"
+                            startIcon={<AddIcon />}
+                          >
+                            Asociar
+                          </Button>
+                        </Tooltip>
                       )}
                       {item.udid && item.validated_by_operator && (
-                        <Button
-                          size="small"
-                          variant="contained"
-                          disabled={postLoading}
-                          onClick={() => handleDisassociateUdid(item.udid, item.validated_by_operator)}
-                        >
-                          {<RemoveIcon />}
-                        </Button>
+                        <Tooltip title="Desasociar UDID">
+                          <Button
+                            size="small"
+                            variant="contained"
+                            color="error"
+                            disabled={postLoading}
+                            onClick={() => handleDisassociateUdid(item.udid, item.validated_by_operator)}
+                            className="corporate-action-button error"
+                            startIcon={<RemoveIcon />}
+                          >
+                            Desasociar
+                          </Button>
+                        </Tooltip>
                       )}
                     </TableCell>
                   </TableRow>
@@ -225,30 +326,71 @@ const Dashboard = () => {
             </Table>
           </TableContainer>
 
-          <Box className="pagination-controls">
-            <Button
-              variant="contained"
-              onClick={handlePrevious}
-              disabled={page === 1 || loading || postLoading}
-            >
-              ⬅ Anterior
-            </Button>
-            <Typography className="pagination-info">
-              Página {data.current_page} de {data.total_pages}
-            </Typography>
-            <Button
-              variant="contained"
-              onClick={handleNext}
-              disabled={data.current_page >= data.total_pages || loading || postLoading}
-            >
-              Siguiente ➡
-            </Button>
-          </Box>
+            <Box className="pagination-controls">
+              <Button
+                variant="outlined"
+                onClick={handlePrevious}
+                disabled={page === 1 || loading || postLoading}
+                className="pagination-button secondary"
+              >
+                ⬅ Anterior
+              </Button>
+              <Typography className="pagination-info">
+                Página {data.current_page} de {data.total_pages}
+              </Typography>
+              <Button
+                variant="outlined"
+                onClick={handleNext}
+                disabled={data.current_page >= data.total_pages || loading || postLoading}
+                className="pagination-button secondary"
+              >
+                Siguiente ➡
+              </Button>
+              </Box>
+            </>
+          ) : (
+            // Vista Cards
+            <>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 3 }}>
+                {data.results.map((item, index) => (
+                  <SubscriberCard
+                    key={item.sn || index}
+                    item={item}
+                    udidEdits={udidEdits}
+                    opEdits={opEdits}
+                    onUdidChange={handleUdidChange}
+                    onOpChange={handleOPChange}
+                    onSaveUdid={handleSaveUdid}
+                    onDisassociateUdid={handleDisassociateUdid}
+                    postLoading={postLoading}
+                  />
+                ))}
+              </Box>
+              
+              <Box className="pagination-controls">
+                <Button
+                  variant="outlined"
+                  onClick={handlePrevious}
+                  disabled={page === 1 || loading || postLoading}
+                  className="pagination-button secondary"
+                >
+                  ⬅ Anterior
+                </Button>
+                <Typography className="pagination-info">
+                  Página {data.current_page} de {data.total_pages}
+                </Typography>
+                <Button
+                  variant="outlined"
+                  onClick={handleNext}
+                  disabled={data.current_page >= data.total_pages || loading || postLoading}
+                  className="pagination-button secondary"
+                >
+                  Siguiente ➡
+                </Button>
+              </Box>
+            </>
+          )}
         </>
-      )}
-
-      {!loading && (!data?.results || data.results.length === 0) && (
-        <Typography>No hay datos de suscriptores disponibles.</Typography>
       )}
     </Box>
   );

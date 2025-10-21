@@ -1,52 +1,158 @@
 .login-wrapper {
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #f4f6f8;
-  animation: fadeIn 0.6s ease-in;
+  background: var(--gradient-primary);
+  position: relative;
+  animation: fadeIn 0.8s ease-out;
+
+  // Patrón de fondo corporativo
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+    pointer-events: none;
+  }
 
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { 
+      opacity: 0; 
+      transform: translateY(20px) scale(0.95); 
+    }
+    to { 
+      opacity: 1; 
+      transform: translateY(0) scale(1); 
+    }
   }
 }
 
 .login-paper {
-  padding: 2rem;
+  padding: var(--spacing-8);
   width: 100%;
-  max-width: 430px;
-  border-radius: 12px;
+  max-width: 480px;
+  border-radius: var(--border-radius-xl);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-2xl);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+  z-index: 1;
+  transition: all var(--transition-slow);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
 }
 
 .login-header {
   text-align: center;
-  margin-top: 1rem;
+  margin-bottom: var(--spacing-6);
+
+  h5 {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-primary);
+    margin-bottom: var(--spacing-2);
+  }
 
   .subtitle {
-    color: #888;
-    font-size: 0.9rem;
+    color: var(--color-gray-600);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-normal);
   }
 }
 
 .button-wrapper {
-  margin-top: 1.5rem;
+  margin-top: var(--spacing-6);
+  
+  .MuiButton-root {
+    padding: var(--spacing-3) var(--spacing-6);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    border-radius: var(--border-radius-md);
+    text-transform: none;
+    transition: all var(--transition-base);
+    font-family: var(--font-family-primary);
+    
+    &.MuiButton-contained {
+      background: var(--gradient-primary);
+      color: white;
+      border: none;
+      
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-lg);
+      }
+      
+      &:disabled {
+        opacity: 0.6;
+        transform: none;
+      }
+    }
+  }
 }
 
 .error-alert {
-  margin-top: 1rem;
+  margin-top: var(--spacing-4);
+  border-radius: var(--border-radius-md);
+}
+
+.success-alert {
+  margin-top: var(--spacing-4);
+  border-radius: var(--border-radius-md);
+}
+
+// ========== FORMULARIOS CORPORATIVOS ==========
+form {
+  .MuiTextField-root {
+    .MuiOutlinedInput-root {
+      border-radius: var(--border-radius-md);
+      transition: all var(--transition-base);
+      
+      &:hover {
+        .MuiOutlinedInput-notchedOutline {
+          border-color: var(--color-primary-light);
+        }
+      }
+      
+      &.Mui-focused {
+        .MuiOutlinedInput-notchedOutline {
+          border-color: var(--color-primary);
+          border-width: 2px;
+        }
+      }
+    }
+    
+    .MuiInputLabel-root {
+      font-weight: var(--font-weight-medium);
+      color: var(--color-gray-600);
+      
+      &.Mui-focused {
+        color: var(--color-primary);
+      }
+    }
+  }
 }
 
 /* Espaciado entre columnas del registro */
 form > .MuiBox-root {
-  margin-top: 1rem;
+  margin-top: var(--spacing-4);
 }
 
 /* Layout responsive para el registro en 2 columnas */
 form > .MuiBox-root[style*='grid-template-columns'] {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+  gap: var(--spacing-6);
 
   > div {
     display: flex;
@@ -54,9 +160,44 @@ form > .MuiBox-root[style*='grid-template-columns'] {
   }
 }
 
-/* Responsive: en pantallas chicas, apila columnas */
+// ========== TABS CORPORATIVAS ==========
+.MuiTabs-root {
+  .MuiTab-root {
+    font-weight: var(--font-weight-medium);
+    text-transform: none;
+    color: var(--color-gray-600);
+    
+    &.Mui-selected {
+      color: var(--color-primary);
+    }
+  }
+  
+  .MuiTabs-indicator {
+    background: var(--color-primary);
+    height: 3px;
+    border-radius: var(--border-radius-sm);
+  }
+}
+
+// ========== RESPONSIVE DESIGN ==========
+@media (max-width: 768px) {
+  .login-wrapper {
+    padding: var(--spacing-4);
+  }
+  
+  .login-paper {
+    padding: var(--spacing-6);
+    max-width: 100%;
+  }
+}
+
 @media (max-width: 600px) {
   form > .MuiBox-root[style*='grid-template-columns'] {
     grid-template-columns: 1fr;
+    gap: var(--spacing-4);
+  }
+  
+  .login-paper {
+    padding: var(--spacing-4);
   }
 }
