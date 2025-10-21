@@ -68,7 +68,7 @@ const Dashboard = () => {
     
     const postBody = {
       subscriber_code: subscriberCode,
-      udid: udidValue,
+      udid: udidValue.toLowerCase(), // Convertir UDID a minúsculas para el backend
       sn: sn,
       operator_id: operador,
       method: 'manual'
@@ -97,7 +97,7 @@ const Dashboard = () => {
     }
 
     const postBody = {
-      udid: udid,
+      udid: udid.toLowerCase(), // Convertir UDID a minúsculas para el backend
       operador: operador
     };
 
