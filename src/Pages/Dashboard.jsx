@@ -138,6 +138,15 @@ const Dashboard = () => {
   const subscriber = useMemo(() => data?.results || [], [data?.results]);
   const postLoading = associateLoading || disassociateLoading;
 
+  // Debug temporal para ver la estructura de data
+  useEffect(() => {
+    if (data) {
+      console.log('🔍 Estructura de data del API:', data);
+      console.log('📊 Campos disponibles:', Object.keys(data));
+      console.log('📈 Count:', data.count);
+    }
+  }, [data]);
+
   // Efecto para mostrar notificaciones de error
   useEffect(() => {
     if (error) {
@@ -161,7 +170,7 @@ const Dashboard = () => {
             Dashboard de Suscriptores
           </Typography>
           <Typography className="dashboard-subtitle">
-            Gestión de UDIDs y operadores - {data?.total_count || 0} registros totales
+            Gestión de UDIDs y operadores - {data?.count || 0} registros totales
           </Typography>
         </Box>
       </Box>
