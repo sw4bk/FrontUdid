@@ -5,7 +5,18 @@ const ProtectedRoute = () => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
-    return <div>Cargando...</div>; // O un spinner
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '16px',
+        color: 'var(--color-gray-600)'
+      }}>
+        Verificando autenticación...
+      </div>
+    );
   }
   
   // Si no está autenticado, redirige al login

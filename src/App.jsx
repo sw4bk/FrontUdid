@@ -8,9 +8,12 @@ import Dashboard from './Pages/Dashboard';
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<Login />}/>
-      <Route path="/dashboard" element={<Dashboard />}/>
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="/login" element={<Login />}/>
+      <Route path="/" element={<ProtectedRoute />}>
+        <Route index element={<Navigate to="/dashboard" replace />} />
+        <Route path="dashboard" element={<Dashboard />}/>
+      </Route>
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 }

@@ -49,7 +49,8 @@ export const AuthProvider = ({ children }) => {
       }
     
       // Caso 2: hay access (vigente o no) → deja que el interceptor maneje 401/refresh
-      setIsAuthenticated(authService.isAuthenticated());
+      const hasAccessToken = !!access;
+      setIsAuthenticated(hasAccessToken);
       setLoading(false);
     };
   
