@@ -1,4 +1,4 @@
-import { useState} from 'react';
+import { useState, useEffect } from 'react';
 
 import {Table, TableBody, TableCell, TableContainer, TableHead, TableRow,Paper, Button, Typography, TextField, Box} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
@@ -6,10 +6,12 @@ import RemoveIcon from '@mui/icons-material/Remove';
 
 import useFetchData from '../Hooks/useFetchData';
 import usePostData from '../Hooks/usePostData';
+import { useNotifications } from '../Hooks/NotificationProvider.jsx';
 
 import '../styles/Dashboard.scss';
 
 const Dashboard = () => {
+  const { showSuccess, showError, showWarning, showInfo } = useNotifications();
   const [udidEdits, setUdidEdits] = useState({});
   const [opEdits, setOpEdits] = useState({});
   const [page, setPage] = useState(1);
@@ -33,12 +35,14 @@ const Dashboard = () => {
   const handlePrevious = () => {
     if (page > 1) {
       setPage(prev => prev - 1);
+      showInfo(`Navegando a página ${page - 1}`);
     }
   };
 
   const handleNext = () => {
     if (data?.current_page < data?.total_pages) {
       setPage(prev => prev + 1);
+      showInfo(`Navegando a página ${page + 1}`);
     }
   };
 
@@ -46,7 +50,19 @@ const Dashboard = () => {
   const handleSaveUdid = async (subscriberCode, sn, udidValue, operador) => {
     // Validación: El valor del UDID no debe estar vacío
     if (!udidValue.trim()) {
-      alert('Por favor, ingresa un UDID válido.');
+      showWarning('Por favor, ingresa un UDID válido');
+      return;
+    }
+
+    // Validación básica de formato UDID (ejemplo: debe tener al menos 20 caracteres)
+    if (udidValue.length < 8) {
+      showError('El UDID debe tener al menos 8 caracteres');
+      return;
+    }
+
+    // Validación de operador
+    if (!operador || !operador.trim()) {
+      showWarning('Por favor, ingresa un operador válido');
       return;
     }
     
@@ -60,8 +76,7 @@ const Dashboard = () => {
 
     try {
       await executeAssociate(postBody);
-      alert(`UDID ${udidValue} guardado para SN: ${sn}`);
-      // ❌ window.location.reload();
+      showSuccess(`UDID ${udidValue} asociado correctamente para SN: ${sn}`);
       refetch(); // ✅ vuelve a cargar la data
       setUdidEdits(prev => {
         const newState = { ...prev };
@@ -70,14 +85,14 @@ const Dashboard = () => {
       });
     } catch (err) {
       console.error('Error al asociar UDID:', err);
-      alert('Error al asociar UDID. Inténtalo de nuevo.');
+      showError('Error al asociar UDID. Verifica los datos e inténtalo de nuevo');
     }
   };
   
   // Nueva función para desasociar un UDID
   const handleDisassociateUdid = async (udid, operador) => {
     if (!udid.trim()) {
-      alert('No se puede desasociar un UDID vacío.');
+      showWarning('No se puede desasociar un UDID vacío');
       return;
     }
 
@@ -88,25 +103,36 @@ const Dashboard = () => {
 
     try {
       await executeDisassociate(postBody);
-      alert(`UDID ${udid} desasociado.`);
-      // ❌ window.location.reload();
+      showSuccess(`UDID ${udid} desasociado correctamente`);
       refetch(); // ✅ vuelve a cargar la data
     } catch (err) {
       console.error('Error al desasociar UDID:', err);
-      alert('Error al desasociar UDID. Inténtalo de nuevo.');
+      showError('Error al desasociar UDID. Inténtalo de nuevo');
     }
   };
 
   const subscriber = data?.results || [];
   const postLoading = associateLoading || disassociateLoading;
 
+  // Efecto para mostrar notificaciones de error
+  useEffect(() => {
+    if (error) {
+      showError(`Error al cargar datos: ${error.message || 'Error desconocido'}`);
+    }
+    if (associateError) {
+      showError(`Error de asociación: ${associateError.message || 'Error desconocido'}`);
+    }
+    if (disassociateError) {
+      showError(`Error de desasociación: ${disassociateError.message || 'Error desconocido'}`);
+    }
+  }, [error, associateError, disassociateError, showError]);
+
   return (
     <Box className="dashboard-wrapper">
-      {loading && <Typography>Cargando datos...</Typography>}
-      {(error || associateError || disassociateError) && (
-        <Typography color="error">
-          Error: {error?.message || associateError?.message || disassociateError?.message}
-        </Typography>
+      {loading && (
+        <Box display="flex" alignItems="center" gap={2} mb={2}>
+          <Typography>Cargando datos...</Typography>
+        </Box>
       )}
 
       {!loading && subscriber.length > 0 && (

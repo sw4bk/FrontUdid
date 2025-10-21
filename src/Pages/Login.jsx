@@ -6,12 +6,14 @@ import LoginIcon from '@mui/icons-material/Login';
 import AppRegistrationIcon from '@mui/icons-material/AppRegistration';
 
 import { useAuth } from '../Hooks/AuthProvider.jsx';
+import { useNotifications } from '../Hooks/NotificationProvider.jsx';
 
 import '../styles/Login.scss';
 
 const Login = () => {
   const navigate = useNavigate();
   const { login, register, loading, error } = useAuth(); 
+  const { showSuccess, showError, showWarning } = useNotifications();
   const [tab, setTab] = useState(0); // 0: Login, 1: Registro
   const [form, setForm] = useState({ username: '', password: '' });
   const [registerForm, setRegisterForm] = useState({
@@ -32,10 +34,15 @@ const Login = () => {
   const handleSubmitLogin = async e => {
     e.preventDefault();
     const { username, password } = form;
-    if (!username.trim() || !password.trim()) return;
+    
+    if (!username.trim() || !password.trim()) {
+      showWarning('Por favor, completa todos los campos');
+      return;
+    }
 
     try {
       await login({ username, password });
+      showSuccess(`¡Bienvenido, ${username}!`);
       navigate('/dashboard');
     } catch (err) {
       // El error se maneja por useAuth y se muestra en la UI
@@ -49,8 +56,20 @@ const Login = () => {
     
     if (!username.trim() || !password.trim() || !email.trim() || 
         !operador.trim() || !documento.trim() || !first_name.trim() || !last_name.trim()) {
-      // Usar el estado de error del contexto para mostrar la alerta
-      // Esto requiere una pequeña modificación en el contexto, o manejarlo localmente
+      showWarning('Por favor, completa todos los campos del formulario');
+      return;
+    }
+
+    // Validación básica de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      showError('Por favor, ingresa un email válido');
+      return;
+    }
+
+    // Validación básica de contraseña
+    if (password.length < 6) {
+      showError('La contraseña debe tener al menos 6 caracteres');
       return;
     }
 
@@ -71,7 +90,7 @@ const Login = () => {
         username: '', password: '', email: '', 
         operador: '', documento: '', first_name: '', last_name: '' 
       });
-      setSuccessMessage('¡Registro exitoso! Ahora puedes iniciar sesión.');
+      showSuccess('¡Registro exitoso! Ahora puedes iniciar sesión.');
     } catch (err) {
       console.error('Registro fallido:', err);
     }

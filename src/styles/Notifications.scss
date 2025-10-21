@@ -1,0 +1,74 @@
+// Estilos personalizados para las notificaciones
+.notification-container {
+  .MuiSnackbar-root {
+    z-index: 9999;
+  }
+
+  .MuiAlert-root {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    font-weight: 500;
+
+    &.MuiAlert-filledSuccess {
+      background: linear-gradient(135deg, #4caf50, #45a049);
+    }
+
+    &.MuiAlert-filledError {
+      background: linear-gradient(135deg, #f44336, #d32f2f);
+    }
+
+    &.MuiAlert-filledWarning {
+      background: linear-gradient(135deg, #ff9800, #f57c00);
+    }
+
+    &.MuiAlert-filledInfo {
+      background: linear-gradient(135deg, #2196f3, #1976d2);
+    }
+
+    .MuiAlert-message {
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .MuiAlert-action {
+      .MuiIconButton-root {
+        color: rgba(255, 255, 255, 0.8);
+        
+        &:hover {
+          color: rgba(255, 255, 255, 1);
+          background-color: rgba(255, 255, 255, 0.1);
+        }
+      }
+    }
+  }
+}
+
+// Animaciones personalizadas
+@keyframes slideInUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutDown {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+// Aplicar animaciones a las notificaciones
+.MuiSnackbar-root {
+  .MuiAlert-root {
+    animation: slideInUp 0.3s ease-out;
+  }
+}
