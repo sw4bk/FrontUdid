@@ -23,7 +23,9 @@ import {
   Cancel as CancelIcon,
   ViewList as TableViewIcon,
   ViewModule as CardViewIcon,
-  Dashboard as DashboardIcon
+  Dashboard as DashboardIcon,
+  Search as SearchIcon,
+  Clear as ClearIcon
 } from '@mui/icons-material';
 
 import useFetchData from '../Hooks/useFetchData';
@@ -37,10 +39,20 @@ const Dashboard = () => {
   const { showSuccess, showError, showWarning, showInfo } = useNotifications();
   const [udidEdits, setUdidEdits] = useState({});
   const [opEdits, setOpEdits] = useState({});
-  const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState('table'); // 'table' o 'cards'
 
-  const { data, loading, error, refetch } = useFetchData(`/subscriberinfo/?page=${page}`);
+  // Búsqueda: GET /search/?subscriber_code=... y/o ?sn=... (solo esos parámetros)
+  const [filterSubscriberCode, setFilterSubscriberCode] = useState('');
+  const [filterSn, setFilterSn] = useState('');
+
+  const queryParams = useMemo(() => {
+    const params = {};
+    if (filterSubscriberCode.trim()) params.subscriber_code = filterSubscriberCode.trim();
+    if (filterSn.trim()) params.sn = filterSn.trim();
+    return params;
+  }, [filterSubscriberCode, filterSn]);
+
+  const { data, loading, error, refetch } = useFetchData('/search/', queryParams);
   
   // Hook para la asociación de UDID
   const { executePost: executeAssociate, loading: associateLoading, error: associateError } = usePostData('/validate-and-associate-udid/');
@@ -56,19 +68,16 @@ const Dashboard = () => {
     setOpEdits(prev => ({ ...prev, [sn]: value }));
   }, []);
 
-  const handlePrevious = useCallback(() => {
-    if (page > 1) {
-      setPage(prev => prev - 1);
-      showInfo(`Navegando a página ${page - 1}`);
-    }
-  }, [page, showInfo]);
+  const handleSearch = useCallback(() => {
+    refetch();
+    showInfo('Buscando...');
+  }, [refetch, showInfo]);
 
-  const handleNext = useCallback(() => {
-    if (data?.current_page < data?.total_pages) {
-      setPage(prev => prev + 1);
-      showInfo(`Navegando a página ${page + 1}`);
-    }
-  }, [data?.current_page, data?.total_pages, page, showInfo]);
+  const handleClearFilters = useCallback(() => {
+    setFilterSubscriberCode('');
+    setFilterSn('');
+    showInfo('Filtros limpiados');
+  }, [showInfo]);
 
   // Función para guardar UDID, ahora con todos los parámetros
   const handleSaveUdid = async (subscriberCode, sn, udidValue, operador) => {
@@ -138,15 +147,6 @@ const Dashboard = () => {
   const subscriber = useMemo(() => data?.results || [], [data?.results]);
   const postLoading = associateLoading || disassociateLoading;
 
-  // Debug temporal para ver la estructura de data
-  useEffect(() => {
-    if (data) {
-      console.log('🔍 Estructura de data del API:', data);
-      console.log('📊 Campos disponibles:', Object.keys(data));
-      console.log('📈 Count:', data.count);
-    }
-  }, [data]);
-
   // Efecto para mostrar notificaciones de error
   useEffect(() => {
     if (error) {
@@ -170,9 +170,48 @@ const Dashboard = () => {
             Dashboard de Suscriptores
           </Typography>
           <Typography className="dashboard-subtitle">
-            Gestión de UDIDs y operadores - {data?.count || 0} registros totales
+            Gestión de UDIDs y operadores - {data?.count ?? 0} registros totales
           </Typography>
         </Box>
+      </Box>
+
+      {/* Búsqueda: /search/?subscriber_code=... y/o ?sn=... */}
+      <Box className="dashboard-search">
+        <TextField
+          className="filter-input"
+          size="small"
+          placeholder="Subscriber code"
+          value={filterSubscriberCode}
+          onChange={(e) => setFilterSubscriberCode(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+        />
+        <TextField
+          className="filter-input"
+          size="small"
+          placeholder="SN"
+          value={filterSn}
+          onChange={(e) => setFilterSn(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+        />
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleSearch}
+          disabled={loading}
+          startIcon={<SearchIcon />}
+          className="search-button"
+        >
+          Buscar
+        </Button>
+        <Button
+          variant="outlined"
+          onClick={handleClearFilters}
+          disabled={loading}
+          startIcon={<ClearIcon />}
+          className="clear-button"
+        >
+          Limpiar
+        </Button>
       </Box>
 
       {/* Controles de Vista */}
@@ -334,28 +373,6 @@ const Dashboard = () => {
               </TableBody>
             </Table>
           </TableContainer>
-
-            <Box className="pagination-controls">
-              <Button
-                variant="outlined"
-                onClick={handlePrevious}
-                disabled={page === 1 || loading || postLoading}
-                className="pagination-button secondary"
-              >
-                ⬅ Anterior
-              </Button>
-              <Typography className="pagination-info">
-                Página {data.current_page} de {data.total_pages}
-              </Typography>
-              <Button
-                variant="outlined"
-                onClick={handleNext}
-                disabled={data.current_page >= data.total_pages || loading || postLoading}
-                className="pagination-button secondary"
-              >
-                Siguiente ➡
-              </Button>
-              </Box>
             </>
           ) : (
             // Vista Cards
@@ -374,28 +391,6 @@ const Dashboard = () => {
                     postLoading={postLoading}
                   />
                 ))}
-              </Box>
-              
-              <Box className="pagination-controls">
-                <Button
-                  variant="outlined"
-                  onClick={handlePrevious}
-                  disabled={page === 1 || loading || postLoading}
-                  className="pagination-button secondary"
-                >
-                  ⬅ Anterior
-                </Button>
-                <Typography className="pagination-info">
-                  Página {data.current_page} de {data.total_pages}
-                </Typography>
-                <Button
-                  variant="outlined"
-                  onClick={handleNext}
-                  disabled={data.current_page >= data.total_pages || loading || postLoading}
-                  className="pagination-button secondary"
-                >
-                  Siguiente ➡
-                </Button>
               </Box>
             </>
           )}
